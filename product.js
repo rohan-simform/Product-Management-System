@@ -1,13 +1,14 @@
-const PMS = {
+export const PMS = {
     //Object that stores: ProductId:{ProductId, ProductName, Image, Price, Description}
     Products: {},
 
     //Sync Product object with localstorage
-    //If current object does not match with Localstorage then update the Product object
+    //If current object does not match with Localstorage and StoredProduct is not null
+    //then update the Product object
     syncLocalStorage() {
-        const storedProduct = localStorage.getItem("Product");
-        if (JSON.stringify(this.Products) !== storedProduct) {
-            this.Products = JSON.parse(storedProduct);
+        const StoredProduct = localStorage.getItem("Product");
+        if (JSON.stringify(this.Products) !== StoredProduct && StoredProduct) {
+            this.Products = JSON.parse(StoredProduct);
         }
     },
 
@@ -29,7 +30,7 @@ const PMS = {
 
     //Returns particular Product based on ProductId
     readProduct(ProductId) {
-        if (this.Products[ProductId]) {
+        if (!this.Products[ProductId]) {
             console.log("Product Already exist");
             return;
         }
