@@ -3,11 +3,15 @@ export const PMS = {
     Products: {},
 
     //Sync Product object with localstorage
-    //If current object does not match with Localstorage and StoredProduct is not null
+    //If StoredProduct is null or undefined return so object does not change
+    //If current object does not match with Localstorage
     //then update the Product object
     syncLocalStorage() {
         const StoredProduct = localStorage.getItem("Product");
-        if (JSON.stringify(this.Products) !== StoredProduct && StoredProduct) {
+
+        if (!StoredProduct) return;
+
+        if (JSON.stringify(this.Products) !== StoredProduct) {
             this.Products = JSON.parse(StoredProduct);
         }
     },
@@ -18,14 +22,15 @@ export const PMS = {
     },
 
     //Add new Product in Product Object
-    createProduct(ProductId, ProductName, Image, Price, Description) {
+    create(ProductId, ProductName, Image, Price, Description) {
         if (this.Products[ProductId]) {
             console.log("Product Already exist");
-            return;
+            return false;
         }
         this.Products[ProductId] = { ProductId, ProductName, Image, Price, Description };
         this.updateLocalStorage()
         console.log("Product Created");
+        return true;
     },
 
     //Returns particular Product based on ProductId
@@ -43,23 +48,25 @@ export const PMS = {
     },
 
     //Removes Product object from Products object
-    deleteProduct(ProductId) {
+    delete(ProductId) {
         if (!this.Products[ProductId]) {
             console.log("Product Does Not exist");
-            return;
+            return false;
         }
         delete this.Products[ProductId];
         this.updateLocalStorage()
         console.log("Product Deleted");
+        return true;
     },
 
     //Updates whole product value in Products Object
     update(ProductId, NewData) {
         if (!this.Products[ProductId]) {
             console.log("Product Does Not exist");
-            return;
+            return false;
         }
         this.Products[ProductId] = NewData;
-        this.updateLocalStorage()
+        this.updateLocalStorage();
+        return true;
     }
 }
