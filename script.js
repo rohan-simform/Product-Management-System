@@ -1,18 +1,24 @@
 import { PMS } from './product.js';
 
 PMS.syncLocalStorage();
-updateTableData(PMS.Products);
+updateTableData(PMS.products);
 
-const addForm = document.getElementById('addProductForm');
-addForm.addEventListener("submit", addNewProduct);
+const Form = document.getElementById('productForm');
+Form.addEventListener("submit", handleProductSubmit);
 
-const updateForm = document.getElementById('updateProductForm');
-updateForm.addEventListener("submit", updateProduct);
+const addBtn = document.getElementById("addBtn")
+addBtn.addEventListener("click", () => {
+    document.getElementById("formMode").value = "add";
+    document.getElementById("modalTitle").textContent = "Add New Product";
+    document.getElementById("productId").disabled = false;
+    document.getElementById('productImage').required = true;
+    document.getElementById("productForm").reset();
+});
 
 let tbody = document.getElementById("t-body");
-tbody.addEventListener('click', dropdownHandle);
+tbody.addEventListener('click', handleAction);
 
-function updateTableData(products = PMS.Products) {
+function updateTableData(products = PMS.products) {
     let tbody = document.getElementById("t-body");
     if (Object.keys(products).length === 0 || !products) {
         tbody.innerHTML = `<tr><td colspan="6"><center><strong>No Product Available</strong></center></td></tr>`;
@@ -23,20 +29,20 @@ function updateTableData(products = PMS.Products) {
 
     Object.values(products).forEach((product) => {
         let idCell = document.createElement("td");
-        idCell.textContent = product.ProductId;
+        idCell.textContent = product.productId;
 
         let nameCell = document.createElement("td");
-        nameCell.textContent = product.ProductName;
+        nameCell.textContent = product.productName;
 
         let imgCell = document.createElement("td");
-        imgCell.innerHTML = `<img src=${product.Image} alt=${product.ProductName} 
+        imgCell.innerHTML = `<img src=${product.productImage} alt=${product.productName} 
         height="100px" width="100px" class="rounded mx-auto d-block img-thumbnail">`;
 
         let priceCell = document.createElement("td");
-        priceCell.textContent = product.Price;
+        priceCell.textContent = product.productPrice;
 
         let descCell = document.createElement("td");
-        descCell.textContent = product.Description;
+        descCell.textContent = product.productDescription;
 
         let actionCell = document.createElement("td");
         actionCell.innerHTML =
@@ -47,13 +53,13 @@ function updateTableData(products = PMS.Products) {
             <ul class="dropdown-menu">
                 <li>
                     <button type="button" class="dropdown-item update-btn" 
-                    data-bs-toggle="modal" data-bs-target="#updateProductModal"
-                    data-updateid="${product.ProductId}">
+                    data-bs-toggle="modal" data-bs-target="#productModal"
+                    data-updateid="${product.productId}">
                         Update
                     </button>
                 </li>
                 <li>
-                    <button type="button" class="dropdown-item text-danger delete-btn" data-deleteid="${product.ProductId}">
+                    <button type="button" class="dropdown-item text-danger delete-btn" data-deleteid="${product.productId}">
                         Delete
                     </button>
                 </li>
@@ -61,7 +67,7 @@ function updateTableData(products = PMS.Products) {
         </div>`
 
         let tr = document.createElement("tr");
-        tr.append(imgCell, idCell, nameCell, priceCell, descCell, actionCell);
+        tr.append(idCell, imgCell, nameCell, priceCell, descCell, actionCell);
         tbody.appendChild(tr);
     });
 }
@@ -77,7 +83,7 @@ function getImageURL(productImage) {
     });
 }
 
-function validateData(productId, productName, productImage, productPrice, productDescription, add = true) {
+function validateData(productId, productName, productImage, productPrice, productDescription, img = true) {
     if (!productId) return "Product ID is required";
     if (isNaN(productId)) return "Product ID must be numeric value";
 
@@ -85,13 +91,13 @@ function validateData(productId, productName, productImage, productPrice, produc
     if (!/^[a-zA-Z0-9]+$/.test(productName)) return "Product Name must be alphanumeric";
     if (productName.length < 3) return "Product name too short";
 
-    if (!productImage && add) return "product Image is required";
+    if (!productImage && img) return "product Image is required";
     if (productImage) {
         if (!productImage.type.startsWith("image/")) return "Only image files allowed";
         if (productImage.size > 2 * 1024 * 1024) return "Image must be under 2MB";
     }
 
-    if (!productPrice) return "product Price is required";
+    if (productPrice === "") return "Product Price is required";
     if (isNaN(productPrice) || Number(productPrice) <= 0) return "Price must be a positive number";
 
     if (!productDescription) return "product Description is required";
@@ -101,36 +107,59 @@ function validateData(productId, productName, productImage, productPrice, produc
     return null;
 }
 
-async function addNewProduct(e) {
+async function handleProductSubmit(e) {
     e.preventDefault();
-    const productId = document.getElementById('productId').value.trim();
+
+    const mode = document.getElementById("formMode").value;
+
+    const productId = Number(document.getElementById('productId').value.trim());
     const productName = document.getElementById('productName').value.trim();
     const productPrice = document.getElementById('productPrice').value.trim();
     const productDescription = document.getElementById('productDescription').value.trim();
     const productImage = document.getElementById('productImage').files[0];
 
-    const error = validateData(productId, productName, productImage, productPrice, productDescription);
+    const error = validateData(
+        productId,
+        productName,
+        productImage,
+        productPrice,
+        productDescription,
+        mode === "add" // image required only in add mode
+    );
+
     if (error) {
         alert(error);
         return;
     }
 
-    const productImageURL = await getImageURL(productImage);
+    let imageURL;
 
-    const res = PMS.create(productId, productName, productImageURL, productPrice, productDescription)
-    if (res) {
+    if (mode === "add") {
+        imageURL = await getImageURL(productImage);
+        PMS.create(productId, productName, imageURL, productPrice, productDescription);
         alert("Product Created Successfully");
     } else {
-        alert("Product Id Alredy Exist");
-        return;
+
+        const oldProduct = PMS.readProduct(productId);
+        imageURL = oldProduct.Image;
+
+        if (productImage) {
+            imageURL = await getImageURL(productImage);
+        }
+
+        PMS.update(productId, {
+            productId: productId,
+            productName: productName,
+            productImage: imageURL,
+            productPrice: productPrice,
+            productDescription: productDescription
+        });
+
+        alert("Product Updated Successfully");
     }
 
-    addForm.reset();
-
-    const addProductModel = document.getElementById('addProductModal');
-    const addModalInstance = bootstrap.Modal.getInstance(addProductModel);
-    addModalInstance.hide();
-
+    document.getElementById('productForm').reset();
+    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
     updateTableData();
 }
 
@@ -144,65 +173,23 @@ function deleteProduct(productId) {
     updateTableData();
 }
 
-async function updateProduct(e) {
-    e.preventDefault();
-
-    const updateId = document.getElementById('updateProductId').value.trim();
-    const updatedName = document.getElementById('updateProductName').value.trim();
-    const updatedPrice = document.getElementById('updateProductPrice').value.trim();
-    const updatedDescription = document.getElementById('updateProductDescription').value.trim();
-    const updatedImage = document.getElementById('updateProductImage').files[0];
-
-    const error = validateData(updateId, updatedName, updatedImage, updatedPrice, updatedDescription, false);
-    if (error) {
-        alert(error);
-        return;
-    }
-
-    let updatedImageURL = PMS.Products[updateId].Image;
-
-    if (updatedImage) {
-        updatedImageURL = await getImageURL(updatedImage);
-    }
-
-    const req = {
-        ProductId: updateId,
-        ProductName: updatedName,
-        Image: updatedImageURL,
-        Price: updatedPrice,
-        Description: updatedDescription
-    };
-
-    const res = PMS.update(updateId, req);
-    if (res) {
-        alert("Product Updated Successfully");
-    } else {
-        alert("Product Id Does Not exist");
-        return;
-    }
-
-    const updateProductModel = document.getElementById('updateProductModal');
-    const updateModelInstance = bootstrap.Modal.getInstance(updateProductModel);
-    updateModelInstance.hide();
-
-    updateTableData();
-}
-
 function openUpdateModel(productId) {
     const product = PMS.readProduct(productId);
 
-    const updateProductId = document.getElementById('updateProductId');
-    const updateProductName = document.getElementById('updateProductName');
-    const updateProductPrice = document.getElementById('updateProductPrice');
-    const updateProductDescription = document.getElementById('updateProductDescription');
+    document.getElementById("formMode").value = "update";
+    document.getElementById("modalTitle").textContent = "Update Product";
 
-    updateProductId.value = product.ProductId;
-    updateProductName.value = product.ProductName;
-    updateProductPrice.value = product.Price;
-    updateProductDescription.value = product.Description;
+    document.getElementById('productId').value = product.productId;
+    document.getElementById('productId').disabled = true;
+
+    document.getElementById('productImage').required = false;
+
+    document.getElementById('productName').value = product.productName;
+    document.getElementById('productPrice').value = product.productPrice;
+    document.getElementById('productDescription').value = product.productDescription;
 }
 
-function dropdownHandle(e) {
+function handleAction(e) {
     if (e.target.classList.contains("delete-btn")) {
         const productId = e.target.dataset.deleteid;
         deleteProduct(productId);

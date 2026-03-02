@@ -1,71 +1,73 @@
 export const PMS = {
-    //Object that stores: ProductId:{ProductId, ProductName, Image, Price, Description}
-    Products: {},
+    //Object that stores: productId:{productId, productName, productImage, productPrice, productDescription}
+    products: {},
 
     //Sync Product object with localstorage
     //If StoredProduct is null or undefined return so object does not change
     //If current object does not match with Localstorage
     //then update the Product object
     syncLocalStorage() {
-        const StoredProduct = localStorage.getItem("Product");
+        const StoredProduct = localStorage.getItem("product");
 
         if (!StoredProduct) return;
 
-        if (JSON.stringify(this.Products) !== StoredProduct) {
-            this.Products = JSON.parse(StoredProduct);
+        if (JSON.stringify(this.products) !== StoredProduct) {
+            this.products = JSON.parse(StoredProduct);
         }
     },
 
     //Updates LocalStorage with Product Object
     updateLocalStorage() {
-        localStorage.setItem("Product", JSON.stringify(this.Products));
+        localStorage.setItem("product", JSON.stringify(this.products));
     },
 
     //Add new Product in Product Object
-    create(ProductId, ProductName, Image, Price, Description) {
-        if (this.Products[ProductId]) {
+    create(productId, productName, productImage, productPrice, productDescription) {
+        if (this.products[productId]) {
             console.log("Product Already exist");
             return false;
         }
-        this.Products[ProductId] = { ProductId, ProductName, Image, Price, Description };
+        this.products[productId] = { productId, productName, productImage, productPrice, productDescription };
         this.updateLocalStorage()
         console.log("Product Created");
         return true;
     },
 
-    //Returns particular Product based on ProductId
-    readProduct(ProductId) {
-        if (!this.Products[ProductId]) {
+    //Returns particular Product based on productId
+    readProduct(productId) {
+        if (!this.products[productId]) {
             console.log("Product Already exist");
             return;
         }
-        return this.Products[ProductId];
+        this.syncLocalStorage();
+        return this.products[productId];
     },
 
     //Returns object that contains all Product
     readAllProduct() {
-        return this.Products;
+        this.syncLocalStorage();
+        return this.products;
     },
 
     //Removes Product object from Products object
-    delete(ProductId) {
-        if (!this.Products[ProductId]) {
+    delete(productId) {
+        if (!this.products[productId]) {
             console.log("Product Does Not exist");
             return false;
         }
-        delete this.Products[ProductId];
+        delete this.products[productId];
         this.updateLocalStorage()
         console.log("Product Deleted");
         return true;
     },
 
     //Updates whole product value in Products Object
-    update(ProductId, NewData) {
-        if (!this.Products[ProductId]) {
+    update(productId, NewData) {
+        if (!this.products[productId]) {
             console.log("Product Does Not exist");
             return false;
         }
-        this.Products[ProductId] = NewData;
+        this.products[productId] = NewData;
         this.updateLocalStorage();
         return true;
     }
