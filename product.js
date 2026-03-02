@@ -2,10 +2,9 @@ export const PMS = {
     //Object that stores: ProductId:{ProductId, ProductName, Image, Price, Description}
     Products: {},
 
-    //Sync Product object with localstorage
-    //If StoredProduct is null or undefined return so object does not change
-    //If current object does not match with Localstorage
-    //then update the Product object
+    //Sync Product object with localstorage 
+    //If current object does not match with Localstorage data,  
+    //then update the Product object with localstorage data
     syncLocalStorage() {
         const StoredProduct = localStorage.getItem("Product");
 
