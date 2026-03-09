@@ -1,20 +1,17 @@
 import { PMS } from './product.js';
 
-//sync local storage data with PMS.Products object, 
-//this will ensure data persistence across page reloads
 PMS.syncLocalStorage();
 
 const tbody = document.getElementById("t-body");
 updateTableData();
 
-//event delegation for handling update and delete button clicks
+// Event delegation for update/delete actions
 tbody.addEventListener('click', handleAction);
 
 const Form = document.getElementById('productForm');
 Form.addEventListener("submit", handleProductSubmit);
 
-const addBtn = document.getElementById("addBtn")
-addBtn.addEventListener("click", () => {
+document.getElementById("addBtn").addEventListener("click", () => {
     document.getElementById("formMode").value = "add";
     document.getElementById("modalTitle").textContent = "Add New Product";
     document.getElementById("productId").disabled = false;
@@ -22,27 +19,21 @@ addBtn.addEventListener("click", () => {
     document.getElementById("productForm").reset();
 });
 
-const sortProduct = document.getElementById("sortProduct");
-sortProduct.addEventListener("change", handleSort);
+document.getElementById("sortProduct").addEventListener("change", handleSort);
 
-const searchInput = document.getElementById("searchBar");
-searchInput.addEventListener("input", searchProduct);
+document.getElementById("searchBar").addEventListener("input", searchProduct);
+document.getElementById("searchBtn").addEventListener("click", searchProduct);
 
-//function to update table data, 
-//if products parameter is not passed then it will use all products from PMS.Products
 function updateTableData(products = PMS.products) {
-    //if no products available then show message in table
     if (!products || Object.keys(products).length === 0) {
         tbody.innerHTML = `<tr><td colspan="6"><center><strong>No Product Available</strong></center></td></tr>`;
         return;
     }
 
-    //convert products object to array for easier iteration
     const productArray = Array.isArray(products) ? products : Object.values(products);
     tbody.innerHTML = "";
 
     productArray.forEach((product) => {
-
         let idCell = document.createElement("td");
         idCell.textContent = product.productId;
 
@@ -50,7 +41,7 @@ function updateTableData(products = PMS.products) {
         nameCell.textContent = product.productName;
 
         let imgCell = document.createElement("td");
-        imgCell.innerHTML = `<img src=${product.productImage} alt=${product.productName} height="70px" width="70px" class="product-img rounded shadow-sm">`;
+        imgCell.innerHTML = `<img src="${product.productImage}" alt="${product.productName}" height="70" width="70" class="product-img rounded shadow-sm">`;
 
         let priceCell = document.createElement("td");
         priceCell.textContent = product.productPrice;
@@ -62,12 +53,12 @@ function updateTableData(products = PMS.products) {
         actionCell.innerHTML =
             `<div class="d-flex justify-content-center gap-2">
                 <button type="button" class="btn btn-sm btn-outline-primary update-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-updateid="${product.productId}"> 
-                    <i class="bi bi-pencil"></i>   Update 
+                    <i class="bi bi-pencil"></i> Update 
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-deleteid="${product.productId}">
                     <i class="bi bi-trash"></i> Delete 
                 </button>
-            </div>`
+            </div>`;
 
         let tr = document.createElement("tr");
         tr.append(idCell, imgCell, nameCell, priceCell, descCell, actionCell);
@@ -75,7 +66,7 @@ function updateTableData(products = PMS.products) {
     });
 }
 
-//convert image file to data URL using FileReader API
+// Returns a promise that resolves with the image data URL
 function getImageURL(productImage) {
     //return a promise that resolves with data URL of the image, 
     //this URL will be used to store image in local storage and display in table
@@ -86,33 +77,33 @@ function getImageURL(productImage) {
         reader.onload = e => resolve(e.target.result);
         reader.onerror = err => reject(err);
 
-        //read the file as data URL, this will trigger onload or onerror based on result
+        //Read the file -  converts the file to a base64 data URL 
+        //This will trigger onload or onerror based on result
         reader.readAsDataURL(productImage);
     });
 }
 
-//validate product data before adding or updating, if img is false then image is not required for validation
+//img=false skips image validation (used in update mode)
 function validateData(productId, productName, productImage, productPrice, productDescription, img = true) {
-
     if (!productId) return "Product ID is required";
     if (isNaN(productId)) return "Product ID must be numeric value";
 
-    if (!productName) return "product Name is required";
-    if (!/^[a-zA-Z0-9]+$/.test(productName)) return "Product Name must be alphanumeric";
-    if (productName.length < 3) return "Product name too short";
+    if (!productName) return "Product Name is required";
+    if (!/^[a-zA-Z0-9 -_]+$/.test(productName)) return "Product Name must be alphanumeric";
+    if (productName.length < 3) return "Product Name is too short";
 
-    if (!productImage && img) return "product Image is required";
+    if (!productImage && img) return "Product Image is required";
     if (productImage) {
-        if (!productImage.type.startsWith("image/")) return "Only image files allowed";
-        if (productImage.size > 2 * 1024 * 1024) return "Image must be under 2MB";
+        if (!productImage.type.startsWith("image/")) return "Only image files are allowed";
+        if (productImage.size > 2 * 1024 * 1024) return "Image must be under 2 MB";
     }
 
     if (productPrice === "") return "Product Price is required";
     if (isNaN(productPrice) || Number(productPrice) <= 0) return "Price must be a positive number";
 
-    if (!productDescription) return "product Description is required";
-    if (productDescription.length < 5) return "Description too short";
-    if (productDescription.length > 500) return "Description too big";
+    if (!productDescription) return "Product Description is required";
+    if (productDescription.length < 5) return "Description is too short";
+    if (productDescription.length > 500) return "Description is too long";
 
     return null;
 }
@@ -134,7 +125,7 @@ async function handleProductSubmit(e) {
         productImage,
         productPrice,
         productDescription,
-        mode === "add" // image required only in add mode
+        mode === "add" //image required only in add mode
     );
 
     if (error) {
@@ -145,25 +136,27 @@ async function handleProductSubmit(e) {
     let imageURL;
 
     if (mode === "add") {
-        imageURL = await getImageURL(productImage);
+        try {
+            imageURL = await getImageURL(productImage);
+        } catch {
+            alert("Failed to read image file. Please try again.");
+            return;
+        }
         PMS.addProduct(productId, productName, imageURL, productPrice, productDescription);
         alert("Product Created Successfully");
     } else {
-        const oldProduct = PMS.getProduct(productId);
-        imageURL = oldProduct.productImage;
+        imageURL = PMS.getProduct(productId).productImage;
 
         if (productImage) {
-            imageURL = await getImageURL(productImage);
+            try {
+                imageURL = await getImageURL(productImage);
+            } catch {
+                alert("Failed to read image file. Please try again.");
+                return;
+            }
         }
 
-        PMS.updateProduct(productId, {
-            productId: productId,
-            productName: productName,
-            productImage: imageURL,
-            productPrice: productPrice,
-            productDescription: productDescription
-        });
-
+        PMS.updateProduct(productId, { productId, productName, productImage: imageURL, productPrice, productDescription });
         alert("Product Updated Successfully");
     }
 
@@ -172,7 +165,6 @@ async function handleProductSubmit(e) {
     updateTableData();
 }
 
-//delete product based on product id
 function deleteProduct(productId) {
     const res = PMS.deleteProduct(productId);
     if (res) {
@@ -183,19 +175,14 @@ function deleteProduct(productId) {
     updateTableData();
 }
 
-//change title of model
-//populate update modal with existing data based on product id
 function openUpdateModel(productId) {
     const product = PMS.getProduct(productId);
 
     document.getElementById("formMode").value = "update";
     document.getElementById("modalTitle").textContent = "Update Product";
-
     document.getElementById('productId').value = product.productId;
     document.getElementById('productId').disabled = true;
-
     document.getElementById('productImage').required = false;
-
     document.getElementById('productName').value = product.productName;
     document.getElementById('productPrice').value = product.productPrice;
     document.getElementById('productDescription').value = product.productDescription;
@@ -203,41 +190,27 @@ function openUpdateModel(productId) {
 
 //handle update and delete button click from dropdown
 function handleAction(e) {
-    if (e.target.classList.contains("delete-btn")) {
-        //get product id from data attribute of delete button and call delete function
-        const productId = e.target.dataset.deleteid;
-        deleteProduct(productId);
-    }
-    if (e.target.classList.contains("update-btn")) {
-        //get product id from data attribute of update button and 
-        //call function to open update modal with product details
-        const productId = e.target.dataset.updateid;
-        openUpdateModel(productId);
-    }
+    const deleteBtn = e.target.closest(".delete-btn");
+    const updateBtn = e.target.closest(".update-btn");
+
+    if (deleteBtn) deleteProduct(deleteBtn.dataset.deleteid);
+    if (updateBtn) openUpdateModel(updateBtn.dataset.updateid);
 }
 
 //sort products based on id, name or price
 function handleSort(e) {
     const sortType = e.target.value;
-    const productsArray = Object.values(PMS.getAllProducts()); //converted to array for sorting
+    const productsArray = Object.values(PMS.getAllProducts());
 
-    if (sortType === "id") {
-        productsArray.sort((a, b) => Number(a.productId) - Number(b.productId));
-    }
-
-    if (sortType === "name") {
-        productsArray.sort((a, b) => a.productName.localeCompare(b.productName));
-    }
-
-    if (sortType === "price") {
-        productsArray.sort((a, b) => Number(a.productPrice) - Number(b.productPrice));
-    }
+    if (sortType === "id") productsArray.sort((a, b) => Number(a.productId) - Number(b.productId));
+    if (sortType === "name") productsArray.sort((a, b) => a.productName.localeCompare(b.productName));
+    if (sortType === "price") productsArray.sort((a, b) => Number(a.productPrice) - Number(b.productPrice));
 
     updateTableData(productsArray);
 }
 
 //search product based on product id, it will do substring match
-function searchProduct(e){
+function searchProduct(){
     
     const searchId = document.getElementById('searchBar').value.trim();
 

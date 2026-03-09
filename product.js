@@ -32,10 +32,10 @@ export const PMS = {
 
     //Returns particular Product based on ProductId
     getProduct(productId) {
+        this.syncLocalStorage();
         if (!this.products[productId]) {
             return;
         }
-        this.syncLocalStorage();
         return this.products[productId];
     },
 
