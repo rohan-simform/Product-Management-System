@@ -1,65 +1,67 @@
 export const PMS = {
-    //Object that stores: ProductId:{ProductId, ProductName, Image, Price, Description}
-    Products: {},
+    //Object that stores: productId:{productId, productName, productImage, productPrice, productDescription}
+    products: {},
 
-    //Sync Product object with localstorage
-    //If current object does not match with Localstorage and StoredProduct is not null
-    //then update the Product object
+    //Sync Product object with localstorage 
+    //If current object does not match with Localstorage data,  
+    //then update the Product object with localstorage data
     syncLocalStorage() {
-        const StoredProduct = localStorage.getItem("Product");
-        if (JSON.stringify(this.Products) !== StoredProduct && StoredProduct) {
-            this.Products = JSON.parse(StoredProduct);
+        const StoredProduct = localStorage.getItem("product");
+
+        if (!StoredProduct) return;
+
+        if (JSON.stringify(this.products) !== StoredProduct) {
+            this.products = JSON.parse(StoredProduct);
         }
     },
 
     //Updates LocalStorage with Product Object
     updateLocalStorage() {
-        localStorage.setItem("Product", JSON.stringify(this.Products));
+        localStorage.setItem("product", JSON.stringify(this.products));
     },
 
     //Add new Product in Product Object
-    createProduct(ProductId, ProductName, Image, Price, Description) {
-        if (this.Products[ProductId]) {
-            console.log("Product Already exist");
-            return;
+    addProduct(productId, productName, productImage, productPrice, productDescription) {
+        if (this.products[productId]) {
+            return false;
         }
-        this.Products[ProductId] = { ProductId, ProductName, Image, Price, Description };
+        this.products[productId] = { productId, productName, productImage, productPrice, productDescription };
         this.updateLocalStorage()
-        console.log("Product Created");
+        return true;
     },
 
     //Returns particular Product based on ProductId
-    readProduct(ProductId) {
-        if (!this.Products[ProductId]) {
-            console.log("Product Already exist");
+    getProduct(productId) {
+        this.syncLocalStorage();
+        if (!this.products[productId]) {
             return;
         }
-        return this.Products[ProductId];
+        return this.products[productId];
     },
 
     //Returns object that contains all Product
-    readAllProduct() {
-        return this.Products;
+    getAllProducts() {
+        this.syncLocalStorage();
+        return this.products;
     },
 
     //Removes Product object from Products object
-    deleteProduct(ProductId) {
-        if (!this.Products[ProductId]) {
-            console.log("Product Does Not exist");
-            return;
+    deleteProduct(productId) {
+        if (!this.products[productId]) {
+            return false;
         }
-        delete this.Products[ProductId];
+        delete this.products[productId];
         this.updateLocalStorage()
-        console.log("Product Deleted");
+        return true;
     },
 
     //Updates whole product value in Products Object
-    update(ProductId, NewData) {
-        if (!this.Products[ProductId]) {
-            console.log("Product Does Not exist");
-            return;
+    updateProduct(productId, newData) {
+        if (!this.products[productId]) {
+            return false;
         }
-        this.Products[ProductId] = NewData;
-        this.updateLocalStorage()
+        this.products[productId] = newData;
+        this.updateLocalStorage();
+        return true;
     }
 }
