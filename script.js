@@ -167,14 +167,6 @@ function deleteProduct(productId) {
 function openUpdateModel(productId) {
     const product = PMS.getProduct(productId);
 
-    // document.getElementById("formMode").value = "update";
-    // document.getElementById("modalTitle").textContent = "Update Product";
-    // document.getElementById('productId').value = product.productId;
-    // document.getElementById('productId').disabled = true;
-    // document.getElementById('productImage').required = false;
-    // document.getElementById('productName').value = product.productName;
-    // document.getElementById('productPrice').value = product.productPrice;
-    // document.getElementById('productDescription').value = product.productDescription;
     $("#formMode").val("update");
     $("#modalTitle").text("Update Product");
     $('#productId').val(product.productId).prop("disabled", true);
