@@ -2,67 +2,57 @@ import { PMS } from './product.js';
 
 PMS.syncLocalStorage();
 
-const tbody = document.getElementById("t-body");
+const $tbody = $("#t-body");
 updateTableData();
 
 // Event delegation for update/delete actions
-tbody.addEventListener('click', handleAction);
+$tbody.on('click', '.update-btn, .delete-btn', handleAction);
 
-const Form = document.getElementById('productForm');
-Form.addEventListener("submit", handleProductSubmit);
+$('#productForm').on("submit", handleProductSubmit);
 
-document.getElementById("addBtn").addEventListener("click", () => {
-    document.getElementById("formMode").value = "add";
-    document.getElementById("modalTitle").textContent = "Add New Product";
-    document.getElementById("productId").disabled = false;
-    document.getElementById('productImage').required = true;
-    document.getElementById("productForm").reset();
+$("#addBtn").on("click", () => {
+    $("#formMode").val("add");
+    $("#modalTitle").text("Add New Product");
+    $("#productId").prop("disabled", false);
+    $('#productImage').prop("required", true);
+    $("#productForm")[0].reset();
 });
 
-document.getElementById("sortProduct").addEventListener("change", handleSort);
+$("#sortProduct").on("change", handleSort);
 
-document.getElementById("searchBar").addEventListener("input", searchProduct);
-document.getElementById("searchBtn").addEventListener("click", searchProduct);
+$("#searchBar, #searchBtn").on("input click", searchProduct);
 
 function updateTableData(products = PMS.products) {
     if (!products || Object.keys(products).length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><center><strong>No Product Available</strong></center></td></tr>`;
+        $tbody.html(`<tr><td colspan="6"><center><strong>No Product Available</strong></center></td></tr>`);
         return;
     }
 
     const productArray = Array.isArray(products) ? products : Object.values(products);
-    tbody.innerHTML = "";
-
+    
+    $tbody.html("");
+    
     productArray.forEach((product) => {
-        let idCell = document.createElement("td");
-        idCell.textContent = product.productId;
-
-        let nameCell = document.createElement("td");
-        nameCell.textContent = product.productName;
-
-        let imgCell = document.createElement("td");
-        imgCell.innerHTML = `<img src="${product.productImage}" alt="${product.productName}" height="70" width="70" class="product-img rounded shadow-sm">`;
-
-        let priceCell = document.createElement("td");
-        priceCell.textContent = product.productPrice;
-
-        let descCell = document.createElement("td");
-        descCell.textContent = product.productDescription;
-
-        let actionCell = document.createElement("td");
-        actionCell.innerHTML =
-            `<div class="d-flex justify-content-center gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary update-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-updateid="${product.productId}"> 
-                    <i class="bi bi-pencil"></i> Update 
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-deleteid="${product.productId}">
-                    <i class="bi bi-trash"></i> Delete 
-                </button>
-            </div>`;
-
-        let tr = document.createElement("tr");
-        tr.append(idCell, imgCell, nameCell, priceCell, descCell, actionCell);
-        tbody.appendChild(tr);
+        const row = `
+            <tr>
+                <td>${product.productId}</td>
+                <td><img src="${product.productImage}" alt="${product.productName}" height="70" width="70" class="product-img rounded shadow-sm"></td>
+                <td>${product.productName}</td>
+                <td>${product.productPrice}</td>
+                <td>${product.productDescription}</td>
+                <td>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary update-btn" data-bs-toggle="modal" data-bs-target="#productModal" data-updateid="${product.productId}"> 
+                            <i class="bi bi-pencil"></i> Update 
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-deleteid="${product.productId}">
+                            <i class="bi bi-trash"></i> Delete 
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        $tbody.append(row);
     });
 }
 
@@ -111,13 +101,13 @@ function validateData(productId, productName, productImage, productPrice, produc
 async function handleProductSubmit(e) {
     e.preventDefault();
 
-    const mode = document.getElementById("formMode").value;
+    const mode = $("#formMode").val();
 
-    const productId = Number(document.getElementById('productId').value.trim());
-    const productName = document.getElementById('productName').value.trim();
-    const productPrice = document.getElementById('productPrice').value.trim();
-    const productDescription = document.getElementById('productDescription').value.trim();
-    const productImage = document.getElementById('productImage').files[0];
+    const productId = Number($('#productId').val().trim());
+    const productName = $('#productName').val().trim();
+    const productPrice = $('#productPrice').val().trim();
+    const productDescription = $('#productDescription').val().trim();
+    const productImage = $('#productImage')[0].files[0];
 
     const error = validateData(
         productId,
@@ -159,9 +149,8 @@ async function handleProductSubmit(e) {
         PMS.updateProduct(productId, { productId, productName, productImage: imageURL, productPrice, productDescription });
         alert("Product Updated Successfully");
     }
-
-    document.getElementById('productForm').reset();
-    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+    $('#productForm')[0].reset();
+    bootstrap.Modal.getInstance($('#productModal')).hide();
     updateTableData();
 }
 
@@ -178,28 +167,37 @@ function deleteProduct(productId) {
 function openUpdateModel(productId) {
     const product = PMS.getProduct(productId);
 
-    document.getElementById("formMode").value = "update";
-    document.getElementById("modalTitle").textContent = "Update Product";
-    document.getElementById('productId').value = product.productId;
-    document.getElementById('productId').disabled = true;
-    document.getElementById('productImage').required = false;
-    document.getElementById('productName').value = product.productName;
-    document.getElementById('productPrice').value = product.productPrice;
-    document.getElementById('productDescription').value = product.productDescription;
+    // document.getElementById("formMode").value = "update";
+    // document.getElementById("modalTitle").textContent = "Update Product";
+    // document.getElementById('productId').value = product.productId;
+    // document.getElementById('productId').disabled = true;
+    // document.getElementById('productImage').required = false;
+    // document.getElementById('productName').value = product.productName;
+    // document.getElementById('productPrice').value = product.productPrice;
+    // document.getElementById('productDescription').value = product.productDescription;
+    $("#formMode").val("update");
+    $("#modalTitle").text("Update Product");
+    $('#productId').val(product.productId).prop("disabled", true);
+    $('#productImage').prop("required", false);
+    $('#productName').val(product.productName);
+    $('#productPrice').val(product.productPrice);
+    $('#productDescription').val(product.productDescription);
 }
 
 //handle update and delete button click from dropdown
 function handleAction(e) {
-    const deleteBtn = e.target.closest(".delete-btn");
-    const updateBtn = e.target.closest(".update-btn");
+    const actionBtn = $(e.target).closest(".delete-btn, .update-btn");
 
-    if (deleteBtn) deleteProduct(deleteBtn.dataset.deleteid);
-    if (updateBtn) openUpdateModel(updateBtn.dataset.updateid);
+    if (actionBtn.hasClass("delete-btn")) {
+        deleteProduct(actionBtn.data("deleteid"));
+    } else if (actionBtn.hasClass("update-btn")) {
+        openUpdateModel(actionBtn.data("updateid"));
+    }
 }
 
 //sort products based on id, name or price
 function handleSort(e) {
-    const sortType = e.target.value;
+    const sortType = $(e.target).val();
     const productsArray = Object.values(PMS.getAllProducts());
 
     if (sortType === "id") productsArray.sort((a, b) => Number(a.productId) - Number(b.productId));
@@ -211,8 +209,7 @@ function handleSort(e) {
 
 //search product based on product id, it will do substring match
 function searchProduct(){
-    
-    const searchId = document.getElementById('searchBar').value.trim();
+    const searchId = $('#searchBar').val().trim();
 
     const matchedProducts = Object.keys(PMS.products)       //get all product keys
         .filter(key => key.includes(searchId))              //filter keys that include searchId (substring match)
